@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLAUDE CODE CHALLENGES - Arcade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- CRT Screen Effect Container -->
+  <div class="crt-container">
+    <div class="scanlines"></div>
+    <div class="crt-content">
+
+      <!-- Header / Score Display -->
+      <header class="arcade-header">
+        <div class="header-left">
+          <h1 class="game-title">CLAUDE CODE</h1>
+          <p class="game-subtitle">CHALLENGES</p>
+        </div>
+        <div class="header-right">
+          <div class="score-display">
+            <span class="score-label">SCORE</span>
+            <span class="score-value" id="totalScore">00000000</span>
+          </div>
+          <div class="lives-display">
+            <span class="lives-label">LIVES</span>
+            <span class="lives-icons" id="lives">&#9829;&#9829;&#9829;</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Arcade Cabinet -->
+      <main class="arcade-cabinet">
+
+        <!-- Stage Select Title -->
+        <div class="stage-select-header">
+          <div class="blink-text">>>> SELECT YOUR CHALLENGE <<<</div>
+        </div>
+
+        <!-- Difficulty Tabs -->
+        <nav class="difficulty-tabs">
+          <button class="tab-btn active" data-difficulty="easy">
+            <span class="star-rating">&#9733;</span> EASY
+          </button>
+          <button class="tab-btn" data-difficulty="medium">
+            <span class="star-rating">&#9733;&#9733;&#9733;</span> MEDIUM
+          </button>
+          <button class="tab-btn" data-difficulty="hard">
+            <span class="star-rating">&#9733;&#9733;&#9733;&#9733;&#9733;</span> HARD
+          </button>
+        </nav>
+
+        <!-- Challenge Cartridge Grid -->
+        <section class="cartridge-grid" id="cartridgeGrid">
+          <!-- Easy Challenges -->
+          <div class="cartridge-section" data-difficulty="easy">
+            <article class="cartridge unlocked" data-challenge="01-file-explorer">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 1</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128193;</div>
+                <h3 class="cartridge-title">FILE EXPLORER</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">100 PTS</span>
+                <span class="status status-new">NEW!</span>
+              </div>
+            </article>
+
+            <article class="cartridge unlocked" data-challenge="02-quick-commit">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 2</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128190;</div>
+                <h3 class="cartridge-title">QUICK COMMIT</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">100 PTS</span>
+                <span class="status status-new">NEW!</span>
+              </div>
+            </article>
+
+            <article class="cartridge unlocked" data-challenge="03-token-check">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 3</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#127918;</div>
+                <h3 class="cartridge-title">TOKEN CHECK</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">100 PTS</span>
+                <span class="status status-new">NEW!</span>
+              </div>
+            </article>
+
+            <article class="cartridge unlocked" data-challenge="04-simple-edit">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 4</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#9998;</div>
+                <h3 class="cartridge-title">SIMPLE EDIT</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">100 PTS</span>
+                <span class="status status-new">NEW!</span>
+              </div>
+            </article>
+
+            <article class="cartridge unlocked" data-challenge="05-search-master">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 5</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128269;</div>
+                <h3 class="cartridge-title">SEARCH MASTER</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">100 PTS</span>
+                <span class="status status-new">NEW!</span>
+              </div>
+            </article>
+          </div>
+
+          <!-- Medium Challenges -->
+          <div class="cartridge-section hidden" data-difficulty="medium">
+            <article class="cartridge locked" data-challenge="01-pr-creator">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 1</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128640;</div>
+                <h3 class="cartridge-title">PR CREATOR</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">150 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked" data-challenge="02-context-handoff">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 2</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128203;</div>
+                <h3 class="cartridge-title">CONTEXT HANDOFF</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">150 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked" data-challenge="03-parallel-search">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 3</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#9881;</div>
+                <h3 class="cartridge-title">PARALLEL SEARCH</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">150 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked" data-challenge="04-config-detective">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 4</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128270;</div>
+                <h3 class="cartridge-title">CONFIG DETECTIVE</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">150 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked" data-challenge="05-refactor-safely">
+              <div class="cartridge-top">
+                <span class="stage-number">STAGE 5</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128295;</div>
+                <h3 class="cartridge-title">REFACTOR SAFELY</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">150 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+          </div>
+
+          <!-- Hard Challenges -->
+          <div class="cartridge-section hidden" data-difficulty="hard">
+            <article class="cartridge locked boss" data-challenge="01-full-feature-flow">
+              <div class="cartridge-top">
+                <span class="stage-number">BOSS 1</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128293;</div>
+                <h3 class="cartridge-title">FULL FEATURE FLOW</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">250 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked boss" data-challenge="02-mcp-orchestra">
+              <div class="cartridge-top">
+                <span class="stage-number">BOSS 2</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#127932;</div>
+                <h3 class="cartridge-title">MCP ORCHESTRA</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">250 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+
+            <article class="cartridge locked boss" data-challenge="03-autonomous-debug">
+              <div class="cartridge-top">
+                <span class="stage-number">FINAL BOSS</span>
+              </div>
+              <div class="cartridge-label">
+                <div class="cartridge-icon">&#128375;</div>
+                <h3 class="cartridge-title">AUTONOMOUS DEBUG</h3>
+              </div>
+              <div class="cartridge-bottom">
+                <span class="points">250 PTS</span>
+                <span class="status status-locked">&#128274; LOCKED</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Insert Coin Prompt -->
+        <div class="insert-coin">
+          <p class="blink-text">&#9654; INSERT COIN TO START &#9664;</p>
+          <p class="sub-prompt">Press ENTER or Click a Challenge</p>
+        </div>
+
+      </main>
+
+      <!-- Footer / Controls -->
+      <footer class="arcade-footer">
+        <div class="control-hints">
+          <span><kbd>&#8592;</kbd><kbd>&#8594;</kbd> MOVE</span>
+          <span><kbd>ENTER</kbd> SELECT</span>
+          <span><kbd>ESC</kbd> BACK</span>
+        </div>
+        <div class="sound-toggle">
+          <button id="soundToggle" class="pixel-btn">
+            &#128266; SOUND: ON
+          </button>
+        </div>
+        <div class="credits">
+          <span>CREDIT: 99</span>
+        </div>
+      </footer>
+
+    </div><!-- /crt-content -->
+
+    <!-- CRT Frame -->
+    <div class="crt-frame">
+      <div class="crt-frame-top"></div>
+      <div class="crt-frame-bottom"></div>
+      <div class="crt-frame-left"></div>
+      <div class="crt-frame-right"></div>
+    </div>
+
+  </div><!-- /crt-container -->
+
+  <!-- Pixel Explosion Container (for animations) -->
+  <div id="pixelExplosion" class="pixel-explosion"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

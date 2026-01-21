@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHALLENGE - Claude Code Challenges</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/challenge.css">
+</head>
+<body>
+  <div class="crt-container">
+    <div class="scanlines"></div>
+    <div class="crt-content">
+
+      <!-- Challenge Header -->
+      <header class="challenge-header">
+        <a href="index.html" class="back-btn">
+          <span class="arrow">&#9664;</span> BACK
+        </a>
+        <div class="challenge-meta">
+          <span class="difficulty-badge" id="difficultyBadge">EASY</span>
+          <span class="stage-badge" id="stageBadge">STAGE 1</span>
+        </div>
+        <div class="timer-display">
+          <span class="timer-label">TIME</span>
+          <span class="timer-value" id="timer">00:00</span>
+        </div>
+      </header>
+
+      <!-- Challenge Content -->
+      <main class="challenge-main">
+        <div class="challenge-title-section">
+          <div class="title-icon" id="challengeIcon">&#128193;</div>
+          <h1 class="challenge-name" id="challengeName">FILE EXPLORER</h1>
+          <div class="points-display">
+            <span class="points-value" id="pointsValue">100</span>
+            <span class="points-label">POINTS</span>
+          </div>
+        </div>
+
+        <div class="challenge-content-grid">
+          <!-- Mission Briefing -->
+          <section class="mission-panel">
+            <div class="panel-header">
+              <span class="panel-icon">&#128196;</span>
+              <h2>MISSION BRIEFING</h2>
+            </div>
+            <div class="panel-content" id="missionContent">
+              <p>Navigate a project directory using Claude Code's file exploration tools.</p>
+              <p>Your mission: Find specific files and extract critical information using Glob, Read, and Grep tools.</p>
+            </div>
+          </section>
+
+          <!-- Objectives -->
+          <section class="objectives-panel">
+            <div class="panel-header">
+              <span class="panel-icon">&#127919;</span>
+              <h2>OBJECTIVES</h2>
+            </div>
+            <div class="panel-content">
+              <ul class="objective-list" id="objectiveList">
+                <li class="objective">
+                  <span class="checkbox">&#9744;</span>
+                  <span class="objective-text">Find all TypeScript files (.ts)</span>
+                  <span class="objective-points">+25</span>
+                </li>
+                <li class="objective">
+                  <span class="checkbox">&#9744;</span>
+                  <span class="objective-text">Locate the calculateTotal function</span>
+                  <span class="objective-points">+25</span>
+                </li>
+                <li class="objective">
+                  <span class="checkbox">&#9744;</span>
+                  <span class="objective-text">Read database.json config</span>
+                  <span class="objective-points">+25</span>
+                </li>
+                <li class="objective">
+                  <span class="checkbox">&#9744;</span>
+                  <span class="objective-text">Count lines in helpers.ts</span>
+                  <span class="objective-points">+25</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Constraints -->
+          <section class="constraints-panel">
+            <div class="panel-header">
+              <span class="panel-icon">&#9888;</span>
+              <h2>CONSTRAINTS</h2>
+            </div>
+            <div class="panel-content">
+              <ul class="constraint-list" id="constraintList">
+                <li class="constraint warning">
+                  <span class="constraint-icon">&#10060;</span>
+                  Do NOT use bash commands (find, cat, wc)
+                </li>
+                <li class="constraint info">
+                  <span class="constraint-icon">&#9989;</span>
+                  Use only Claude Code tools (Glob, Read, Grep)
+                </li>
+                <li class="constraint info">
+                  <span class="constraint-icon">&#128337;</span>
+                  Complete in a single session
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Hints -->
+          <section class="hints-panel">
+            <div class="panel-header">
+              <span class="panel-icon">&#128161;</span>
+              <h2>HINTS</h2>
+              <span class="hint-cost">-10 PTS EACH</span>
+            </div>
+            <div class="panel-content">
+              <div class="hint-container">
+                <button class="hint-btn" data-hint="1">
+                  <span class="hint-number">HINT 1</span>
+                  <span class="hint-status">&#128274; REVEAL</span>
+                </button>
+                <div class="hint-content hidden" id="hint1">
+                  Use Glob with pattern "**/*.ts" for recursive TypeScript search
+                </div>
+              </div>
+              <div class="hint-container">
+                <button class="hint-btn" data-hint="2">
+                  <span class="hint-number">HINT 2</span>
+                  <span class="hint-status">&#128274; REVEAL</span>
+                </button>
+                <div class="hint-content hidden" id="hint2">
+                  Use Grep with output_mode "content" and -n flag for line numbers
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-section">
+          <button class="action-btn primary" id="startBtn">
+            <span class="btn-icon">&#127918;</span>
+            INSERT COIN TO START
+          </button>
+          <button class="action-btn secondary" id="verifyBtn">
+            <span class="btn-icon">&#9989;</span>
+            VERIFY SOLUTION
+          </button>
+        </div>
+
+        <!-- Terminal Output Preview -->
+        <section class="terminal-section">
+          <div class="terminal-header">
+            <span class="terminal-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </span>
+            <span class="terminal-title">challenge-terminal</span>
+          </div>
+          <div class="terminal-body" id="terminalOutput">
+            <p class="terminal-line"><span class="prompt">$</span> Ready to start challenge...</p>
+            <p class="terminal-line"><span class="prompt">$</span> Run: <span class="command">python tests.py</span> to verify</p>
+            <p class="terminal-line blink">_</p>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="arcade-footer">
+        <div class="control-hints">
+          <span><kbd>ESC</kbd> BACK</span>
+          <span><kbd>H</kbd> HINTS</span>
+          <span><kbd>ENTER</kbd> START</span>
+        </div>
+        <div class="credits">
+          <span id="currentScore">SCORE: 00000000</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <div id="pixelExplosion" class="pixel-explosion"></div>
+
+  <!-- Victory Modal -->
+  <div class="modal hidden" id="victoryModal">
+    <div class="modal-content victory">
+      <div class="modal-icon">&#127942;</div>
+      <h2 class="modal-title">CHALLENGE CLEAR!</h2>
+      <div class="score-breakdown">
+        <div class="breakdown-item">
+          <span>Base Score</span>
+          <span id="baseScore">+100</span>
+        </div>
+        <div class="breakdown-item">
+          <span>Time Bonus</span>
+          <span id="timeBonus">+25</span>
+        </div>
+        <div class="breakdown-item">
+          <span>Hints Used</span>
+          <span id="hintPenalty">-0</span>
+        </div>
+        <div class="breakdown-total">
+          <span>TOTAL</span>
+          <span id="totalEarned">+125</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="action-btn primary" onclick="location.href='index.html'">
+          CONTINUE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/challenge.js"></script>
+</body>
+</html>
