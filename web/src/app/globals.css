@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #0D1117;
+  --foreground: #C9D1D9;
+  --prompt: #58A6FF;
+  --success: #3FB950;
+  --category: #F778BA;
+  --muted: #8B949E;
+  --border: #30363D;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-prompt: var(--prompt);
+  --color-success: var(--success);
+  --color-category: var(--category);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Fira Code', monospace;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Terminal styling */
+.terminal {
+  background: var(--background);
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+/* Typing cursor animation */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  background: var(--foreground);
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+
+/* Progress bar */
+.progress-bar {
+  display: inline-block;
+}
+
+.progress-filled {
+  color: var(--success);
+}
+
+.progress-empty {
+  color: var(--muted);
+}
+
+/* Command input */
+.command-input {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  font-family: 'Fira Code', monospace;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+  caret-color: var(--foreground);
+}
+
+.command-input::placeholder {
+  color: var(--muted);
+}
+
+/* Clickable elements */
+.clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.clickable:hover {
+  color: var(--prompt);
+}
+
+/* ASCII art styling */
+.ascii-art {
+  white-space: pre;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  color: var(--category);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Loading animation */
+@keyframes loading {
+  0% { content: '█'; }
+  25% { content: '██'; }
+  50% { content: '███'; }
+  75% { content: '████'; }
+  100% { content: '█████'; }
+}
+
+/* Selection */
+::selection {
+  background: var(--prompt);
+  color: var(--background);
+}
