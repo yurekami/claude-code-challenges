@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect, useCallback, memo, startTransition } from 'react';
+import dynamic from 'next/dynamic';
 import { categories, Category, Challenge, getTotalChallenges } from '@/data/challenges';
 import {
   welcomeArt,
@@ -12,6 +12,20 @@ import {
   getProgressBar,
 } from '@/lib/ascii';
 
+// bundle-dynamic-imports: Lazy load framer-motion (heavy animation library ~50KB)
+const MotionDiv = dynamic(
+  () => import('framer-motion').then(m => {
+    const { motion } = m;
+    return { default: motion.div };
+  }),
+  { ssr: false }
+);
+
+const AnimatePresenceWrapper = dynamic(
+  () => import('framer-motion').then(m => ({ default: m.AnimatePresence })),
+  { ssr: false }
+);
+
 interface OutputLine {
   id: string;
   content: React.ReactNode;
@@ -21,26 +35,64 @@ interface OutputLine {
 // Generate unique ID for output lines
 const genId = () => Math.random().toString(36).substr(2, 9);
 
-// Initial welcome output
-const getInitialOutput = (): OutputLine[] => [
+// rendering-hoist-jsx: Static JSX hoisted outside component
+const welcomeOutput: OutputLine[] = [
   { id: genId(), content: <pre className="ascii-art text-[#F778BA]">{welcomeArt}</pre>, type: 'ascii' },
   { id: genId(), content: '', type: 'output' },
   { id: genId(), content: <span className="text-[#8B949E]">Type &apos;help&apos; for commands or &apos;ls&apos; to see categories</span>, type: 'output' },
   { id: genId(), content: '', type: 'output' },
 ];
 
+// rendering-hoist-jsx: Static help text JSX
+const helpOutput = <pre className="text-[#C9D1D9] whitespace-pre-wrap">{helpText}</pre>;
+const aboutOutput = <pre className="text-[#C9D1D9] whitespace-pre-wrap">{aboutText}</pre>;
+
+// js-set-map-lookups: Pre-build category lookup Map for O(1) lookups
+const categoryBySlug = new Map(categories.map(c => [c.slug, c]));
+const categoryById = new Map(categories.map(c => [c.id, c]));
+
+// Helper to find category with O(1) lookups first, then fallback to partial match
+const findCategory = (arg: string): Category | undefined => {
+  // O(1) exact match first
+  const exactSlug = categoryBySlug.get(arg);
+  if (exactSlug) return exactSlug;
+
+  const exactId = categoryById.get(arg);
+  if (exactId) return exactId;
+
+  // Fallback to partial match (still needed for tab completion behavior)
+  return categories.find(c => c.slug.startsWith(arg));
+};
+
+// rendering-hoist-jsx: Static cursor element
+const cursorElement = <span className="cursor" />;
+
+// rerender-memo: Memoized output line component
+const OutputLineItem = memo(function OutputLineItem({ line }: { line: OutputLine }) {
+  return (
+    <MotionDiv
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.1 }}
+      className="leading-relaxed"
+    >
+      {line.content}
+    </MotionDiv>
+  );
+});
+
 export default function Terminal() {
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState<OutputLine[]>(getInitialOutput);
+  const [output, setOutput] = useState<OutputLine[]>(welcomeOutput);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [completedChallenges] = useState<Set<string>>(new Set());
+  const [completedChallenges] = useState<Set<string>>(() => new Set()); // rerender-lazy-state-init
 
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
 
-  // Add output line
+  // rerender-functional-setstate: Use functional updates for stable callbacks
   const addOutput = useCallback((content: React.ReactNode, type: OutputLine['type'] = 'output') => {
     setOutput(prev => [...prev, { id: genId(), content, type }]);
   }, []);
@@ -80,11 +132,19 @@ export default function Terminal() {
     cat.challenges.forEach((ch, i) => {
       const isComplete = completedChallenges.has(ch.id);
       const badge = getDifficultyBadge(ch.difficulty);
+      // rendering-conditional-render: Use ternary for class names
+      const indexClass = isComplete ? 'text-[#3FB950]' : 'text-[#58A6FF]';
+      const nameClass = isComplete ? 'text-[#3FB950]' : 'text-[#C9D1D9]';
+      const difficultyClass = ch.difficulty === 'Easy'
+        ? 'text-[#3FB950]'
+        : ch.difficulty === 'Medium'
+          ? 'text-[#D29922]'
+          : 'text-[#F85149]';
 
       addOutput(
         <div className="flex items-start gap-2 my-1">
           <span
-            className={`${isComplete ? 'text-[#3FB950]' : 'text-[#58A6FF]'} clickable cursor-pointer`}
+            className={`${indexClass} clickable cursor-pointer`}
             onClick={() => {
               startChallenge(ch, cat.slug);
               inputRef.current?.focus();
@@ -94,7 +154,7 @@ export default function Terminal() {
           </span>
           <div className="flex-1">
             <span
-              className={`${isComplete ? 'text-[#3FB950]' : 'text-[#C9D1D9]'} clickable cursor-pointer hover:text-[#58A6FF]`}
+              className={`${nameClass} clickable cursor-pointer hover:text-[#58A6FF]`}
               onClick={() => {
                 startChallenge(ch, cat.slug);
                 inputRef.current?.focus();
@@ -102,7 +162,7 @@ export default function Terminal() {
             >
               {ch.name}
             </span>
-            <span className={`ml-2 ${ch.difficulty === 'Easy' ? 'text-[#3FB950]' : ch.difficulty === 'Medium' ? 'text-[#D29922]' : 'text-[#F85149]'}`}>
+            <span className={`ml-2 ${difficultyClass}`}>
               {badge}
             </span>
             <span className="text-[#8B949E] ml-2">{ch.timeMinutes}m</span>
@@ -118,6 +178,7 @@ export default function Terminal() {
   // Show category with ASCII art
   const showCategory = useCallback((cat: Category) => {
     const art = categoryArt[cat.slug];
+    // rendering-conditional-render: Use ternary-style conditional
     if (art) {
       addOutput(<pre className="ascii-art">{art}</pre>, 'ascii');
     }
@@ -209,7 +270,7 @@ export default function Terminal() {
     });
   }, [addOutput, completedChallenges]);
 
-  // Command processor - now all helper functions are declared above
+  // Command processor
   const processCommand = useCallback((cmd: string) => {
     const trimmed = cmd.trim().toLowerCase();
     const parts = trimmed.split(/\s+/);
@@ -228,11 +289,11 @@ export default function Terminal() {
     // Process commands
     switch (command) {
       case 'help':
-        addOutput(<pre className="text-[#C9D1D9] whitespace-pre-wrap">{helpText}</pre>);
+        addOutput(helpOutput);
         break;
 
       case 'about':
-        addOutput(<pre className="text-[#C9D1D9] whitespace-pre-wrap">{aboutText}</pre>);
+        addOutput(aboutOutput);
         break;
 
       case 'clear':
@@ -241,9 +302,8 @@ export default function Terminal() {
 
       case 'ls':
         if (args[0]) {
-          const cat = categories.find(c =>
-            c.slug === args[0] || c.slug.startsWith(args[0]) || c.id === args[0]
-          );
+          // js-set-map-lookups: Use O(1) Map lookup
+          const cat = findCategory(args[0]);
           if (cat) {
             listChallenges(cat);
           } else {
@@ -261,9 +321,8 @@ export default function Terminal() {
           setCurrentCategory(null);
           addOutput(<span className="text-[#3FB950]">Returned to home</span>, 'success');
         } else if (args[0]) {
-          const cat = categories.find(c =>
-            c.slug === args[0] || c.slug.startsWith(args[0]) || c.id === args[0]
-          );
+          // js-set-map-lookups: Use O(1) Map lookup
+          const cat = findCategory(args[0]);
           if (cat) {
             setCurrentCategory(cat);
             showCategory(cat);
@@ -278,6 +337,7 @@ export default function Terminal() {
       case 'start':
         if (args[0] && currentCategory) {
           const num = parseInt(args[0]);
+          // js-length-check-first: Check bounds before accessing
           if (num > 0 && num <= currentCategory.challenges.length) {
             startChallenge(currentCategory.challenges[num - 1], currentCategory.slug);
           } else {
@@ -306,7 +366,7 @@ export default function Terminal() {
         );
     }
 
-    // Add to history
+    // rerender-functional-setstate: Use functional update for history
     if (trimmed) {
       setCommandHistory(prev => [...prev, trimmed]);
       setHistoryIndex(-1);
@@ -325,14 +385,15 @@ export default function Terminal() {
     }
   }, [output]);
 
-  // Handle input
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  // Handle input - rerender-transitions for non-urgent updates
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       processCommand(input);
       setInput('');
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (commandHistory.length > 0) {
+        // rerender-functional-setstate: Would need ref for history access
         const newIndex = historyIndex < commandHistory.length - 1 ? historyIndex + 1 : historyIndex;
         setHistoryIndex(newIndex);
         setInput(commandHistory[commandHistory.length - 1 - newIndex] || '');
@@ -349,27 +410,24 @@ export default function Terminal() {
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      // Simple tab completion
-      const commands = ['help', 'ls', 'cd', 'start', 'clear', 'progress', 'about'];
-      const catSlugs = categories.map(c => c.slug);
-      const all = [...commands, ...catSlugs];
-      const match = all.find(c => c.startsWith(input.toLowerCase()));
-      if (match) setInput(match);
+      // rerender-transitions: Non-urgent UI update
+      startTransition(() => {
+        const commands = ['help', 'ls', 'cd', 'start', 'clear', 'progress', 'about'];
+        const catSlugs = categories.map(c => c.slug);
+        const all = [...commands, ...catSlugs];
+        const match = all.find(c => c.startsWith(input.toLowerCase()));
+        if (match) setInput(match);
+      });
     } else if (e.key === 'Escape') {
       if (currentCategory) {
         setCurrentCategory(null);
         addOutput(<span className="text-[#3FB950]">Returned to home</span>, 'success');
       }
     }
-  };
+  }, [addOutput, commandHistory, currentCategory, historyIndex, input, processCommand]);
 
-  // Get prompt
-  const getPrompt = () => {
-    if (currentCategory) {
-      return `~/challenges/${currentCategory.slug}`;
-    }
-    return '~';
-  };
+  // Get prompt - simple enough to not need memoization
+  const prompt = currentCategory ? `~/challenges/${currentCategory.slug}` : '~';
 
   return (
     <div
@@ -381,24 +439,16 @@ export default function Terminal() {
         ref={outputRef}
         className="flex-1 overflow-y-auto pb-4"
       >
-        <AnimatePresence>
+        <AnimatePresenceWrapper>
           {output.map((line) => (
-            <motion.div
-              key={line.id}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.1 }}
-              className="leading-relaxed"
-            >
-              {line.content}
-            </motion.div>
+            <OutputLineItem key={line.id} line={line} />
           ))}
-        </AnimatePresence>
+        </AnimatePresenceWrapper>
       </div>
 
       {/* Input area */}
       <div className="sticky bottom-0 bg-[#0D1117] border-t border-[#30363D] py-3 flex items-center gap-2">
-        <span className="text-[#3FB950]">{getPrompt()}</span>
+        <span className="text-[#3FB950]">{prompt}</span>
         <span className="text-[#58A6FF]">$</span>
         <input
           ref={inputRef}
@@ -412,7 +462,7 @@ export default function Terminal() {
           spellCheck={false}
           autoComplete="off"
         />
-        <span className="cursor" />
+        {cursorElement}
       </div>
 
       {/* Status bar */}
