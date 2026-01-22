@@ -77,7 +77,7 @@ Available commands:
   help              Show this help message
   ls                List all categories
   ls <category>     List challenges in a category
-  cd <category>     Navigate to a category
+  cd <slug>         Navigate to a category by slug
   start <n>         Start challenge number n
   clear             Clear the terminal
   progress          Show your progress
@@ -85,11 +85,11 @@ Available commands:
   ask [question]    Interactive question (demo)
   about             About Claude Code Challenges
 
-Navigation tips:
-  - Click on any [bracketed] item to select it
-  - Type number to select from options
-  - Use Tab to autocomplete commands
-  - Press Escape to go back or cancel
+Keyboard shortcuts:
+  Tab               Autocomplete commands
+  Up/Down           Navigate command history
+  Escape            Go back / cancel question
+  Enter             Execute command
 `;
 
 export const aboutText = `

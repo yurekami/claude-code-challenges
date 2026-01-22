@@ -88,15 +88,7 @@ body {
   color: var(--muted);
 }
 
-/* Clickable elements */
-.clickable {
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.clickable:hover {
-  color: var(--prompt);
-}
+/* Text selection only - no mouse interaction (like real CLI) */
 
 /* ASCII art styling */
 .ascii-art {

@@ -160,40 +160,30 @@ const OutputLineItem = memo(function OutputLineItem({ line }: { line: OutputLine
   );
 });
 
-// QuestionDisplay: Render AskUserQuestion-style multiple choice
-interface QuestionDisplayProps {
-  question: PendingQuestion;
-  onSelect: (index: number) => void;
-}
+// QuestionDisplay: Render AskUserQuestion-style multiple choice (keyboard-only)
 
-const QuestionDisplay = memo(function QuestionDisplay({ question, onSelect }: QuestionDisplayProps) {
+// QuestionDisplay: Pure text display (keyboard-only, no clicks)
+const QuestionDisplay = memo(function QuestionDisplay({ question }: { question: PendingQuestion }) {
   return (
     <div className="my-2 border border-[#30363D] rounded p-3">
       <div className="text-[#F778BA] font-bold mb-2">
         [{question.header}] {question.question}
       </div>
       <div className="text-[#8B949E] text-sm mb-2">
-        {question.multiSelect ? 'Select multiple (comma-separated) or type:' : 'Select one or type:'}
+        {question.multiSelect ? 'Type numbers (comma-separated):' : 'Type a number to select:'}
       </div>
       <div className="space-y-1">
         {question.options.map((opt, i) => (
-          <div
-            key={i}
-            className="flex items-start gap-2 cursor-pointer hover:bg-[#21262D] px-2 py-1 rounded group"
-            onClick={() => onSelect(i)}
-          >
-            <span className="text-[#58A6FF] group-hover:text-[#79C0FF]">[{i + 1}]</span>
+          <div key={i} className="flex items-start gap-2 px-2 py-1">
+            <span className="text-[#58A6FF]">[{i + 1}]</span>
             <div>
-              <span className="text-[#C9D1D9] group-hover:text-white">{opt.label}</span>
+              <span className="text-[#C9D1D9]">{opt.label}</span>
               {opt.description && (
                 <span className="text-[#8B949E] ml-2">- {opt.description}</span>
               )}
             </div>
           </div>
         ))}
-      </div>
-      <div className="text-[#8B949E] text-xs mt-2">
-        Type number to select, or type custom answer
       </div>
     </div>
   );
@@ -234,23 +224,7 @@ export default function Terminal() {
       onAnswer,
     };
     setPendingQuestion(q);
-    addOutput(
-      <QuestionDisplay
-        question={q}
-        onSelect={(index) => {
-          const answer = options[index].label;
-          setPendingQuestion(null);
-          addOutput(
-            <span>
-              <span className="text-[#58A6FF]">→ </span>
-              <span className="text-[#3FB950]">{answer}</span>
-            </span>,
-            'success'
-          );
-          onAnswer(answer);
-        }}
-      />
-    );
+    addOutput(<QuestionDisplay question={q} />);
   }, [addOutput]);
 
   // Start a quiz session
@@ -329,7 +303,7 @@ export default function Terminal() {
 
     addOutput('');
     addOutput(<span className="text-[#F778BA] font-bold">CLAUDE CODE QUIZ</span>);
-    addOutput(<span className="text-[#8B949E]">Test your knowledge! Click an option or type its number.</span>);
+    addOutput(<span className="text-[#8B949E]">Test your knowledge! Type the number of your answer.</span>);
     askNextQuestion();
   }, [addOutput, askQuestion]);
 
@@ -363,12 +337,11 @@ export default function Terminal() {
     }, 500);
   }, [addOutput]);
 
-  // List challenges in category
+  // List challenges in category (keyboard-only, no clicks)
   const listChallenges = useCallback((cat: Category) => {
     cat.challenges.forEach((ch, i) => {
       const isComplete = completedChallenges.has(ch.id);
       const badge = getDifficultyBadge(ch.difficulty);
-      // rendering-conditional-render: Use ternary for class names
       const indexClass = isComplete ? 'text-[#3FB950]' : 'text-[#58A6FF]';
       const nameClass = isComplete ? 'text-[#3FB950]' : 'text-[#C9D1D9]';
       const difficultyClass = ch.difficulty === 'Easy'
@@ -379,28 +352,10 @@ export default function Terminal() {
 
       addOutput(
         <div className="flex items-start gap-2 my-1">
-          <span
-            className={`${indexClass} clickable cursor-pointer`}
-            onClick={() => {
-              startChallenge(ch, cat.slug);
-              inputRef.current?.focus();
-            }}
-          >
-            [{i + 1}]
-          </span>
+          <span className={indexClass}>[{i + 1}]</span>
           <div className="flex-1">
-            <span
-              className={`${nameClass} clickable cursor-pointer hover:text-[#58A6FF]`}
-              onClick={() => {
-                startChallenge(ch, cat.slug);
-                inputRef.current?.focus();
-              }}
-            >
-              {ch.name}
-            </span>
-            <span className={`ml-2 ${difficultyClass}`}>
-              {badge}
-            </span>
+            <span className={nameClass}>{ch.name}</span>
+            <span className={`ml-2 ${difficultyClass}`}>{badge}</span>
             <span className="text-[#8B949E] ml-2">{ch.timeMinutes}m</span>
           </div>
         </div>
@@ -408,8 +363,8 @@ export default function Terminal() {
       addOutput(<span className="text-[#8B949E] ml-6 text-sm">&quot;{ch.description}&quot;</span>);
     });
     addOutput('');
-    addOutput(<span className="text-[#8B949E]">Type &apos;start &lt;n&gt;&apos; or click to begin</span>);
-  }, [addOutput, completedChallenges, startChallenge]);
+    addOutput(<span className="text-[#8B949E]">Type &apos;start &lt;n&gt;&apos; to begin a challenge</span>);
+  }, [addOutput, completedChallenges]);
 
   // Show category with ASCII art
   const showCategory = useCallback((cat: Category) => {
@@ -430,7 +385,7 @@ export default function Terminal() {
     listChallenges(cat);
   }, [addOutput, listChallenges]);
 
-  // List categories
+  // List categories (keyboard-only, no clicks)
   const listCategories = useCallback(() => {
     addOutput(<span className="text-[#8B949E]">Categories ({categories.length}):</span>);
     addOutput('');
@@ -441,38 +396,19 @@ export default function Terminal() {
 
       addOutput(
         <div className="flex items-start gap-4">
-          <span
-            className="text-[#58A6FF] clickable cursor-pointer hover:underline"
-            onClick={() => {
-              setCurrentCategory(cat);
-              showCategory(cat);
-              inputRef.current?.focus();
-            }}
-          >
-            [{i + 1}]
-          </span>
+          <span className="text-[#58A6FF]">[{i + 1}]</span>
           <div className="flex-1">
-            <span
-              className="text-[#C9D1D9] clickable cursor-pointer hover:text-[#58A6FF]"
-              onClick={() => {
-                setCurrentCategory(cat);
-                showCategory(cat);
-                inputRef.current?.focus();
-              }}
-            >
-              {cat.name}
-            </span>
-            <span className="text-[#8B949E] ml-4">
-              {completed}/{total}
-            </span>
+            <span className="text-[#C9D1D9]">{cat.name}</span>
+            <span className="text-[#8B949E] ml-4">{cat.slug}</span>
+            <span className="text-[#8B949E] ml-4">{completed}/{total}</span>
           </div>
         </div>
       );
     });
 
     addOutput('');
-    addOutput(<span className="text-[#8B949E]">Type &apos;cd &lt;category&gt;&apos; or click to navigate</span>);
-  }, [addOutput, completedChallenges, showCategory]);
+    addOutput(<span className="text-[#8B949E]">Type &apos;cd &lt;slug&gt;&apos; to navigate (e.g., cd cli-fundamentals)</span>);
+  }, [addOutput, completedChallenges]);
 
   // Show progress
   const showProgress = useCallback(() => {
@@ -757,10 +693,7 @@ export default function Terminal() {
   const prompt = currentCategory ? `~/challenges/${currentCategory.slug}` : '~';
 
   return (
-    <div
-      className="terminal min-h-screen flex flex-col"
-      onClick={() => inputRef.current?.focus()}
-    >
+    <div className="terminal min-h-screen flex flex-col">
       {/* Output area */}
       <div
         ref={outputRef}
