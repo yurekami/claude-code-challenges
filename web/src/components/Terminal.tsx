@@ -407,7 +407,7 @@ export default function Terminal() {
     });
 
     addOutput('');
-    addOutput(<span className="text-[#8B949E]">Type &apos;cd &lt;slug&gt;&apos; to navigate (e.g., cd cli-fundamentals)</span>);
+    addOutput(<span className="text-[#8B949E]">Type &apos;cd &lt;n&gt;&apos; or &apos;cd &lt;slug&gt;&apos; to navigate</span>);
   }, [addOutput, completedChallenges]);
 
   // Show progress
@@ -474,8 +474,14 @@ export default function Terminal() {
 
       case 'ls':
         if (args[0]) {
-          // js-set-map-lookups: Use O(1) Map lookup
-          const cat = findCategory(args[0]);
+          // Support both number (ls 1) and slug (ls cli-fundamentals)
+          const num = parseInt(args[0]);
+          let cat: Category | undefined;
+          if (!isNaN(num) && num >= 1 && num <= categories.length) {
+            cat = categories[num - 1];
+          } else {
+            cat = findCategory(args[0]);
+          }
           if (cat) {
             listChallenges(cat);
           } else {
@@ -493,8 +499,14 @@ export default function Terminal() {
           setCurrentCategory(null);
           addOutput(<span className="text-[#3FB950]">Returned to home</span>, 'success');
         } else if (args[0]) {
-          // js-set-map-lookups: Use O(1) Map lookup
-          const cat = findCategory(args[0]);
+          // Support both number (cd 1) and slug (cd cli-fundamentals)
+          const num = parseInt(args[0]);
+          let cat: Category | undefined;
+          if (!isNaN(num) && num >= 1 && num <= categories.length) {
+            cat = categories[num - 1];
+          } else {
+            cat = findCategory(args[0]);
+          }
           if (cat) {
             setCurrentCategory(cat);
             showCategory(cat);
@@ -502,7 +514,7 @@ export default function Terminal() {
             addOutput(<span className="text-red-400">Category not found: {args[0]}</span>, 'error');
           }
         } else {
-          addOutput(<span className="text-[#8B949E]">Usage: cd &lt;category&gt;</span>);
+          addOutput(<span className="text-[#8B949E]">Usage: cd &lt;number&gt; or cd &lt;slug&gt;</span>);
         }
         break;
 

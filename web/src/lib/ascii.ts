@@ -76,8 +76,9 @@ Available commands:
 
   help              Show this help message
   ls                List all categories
-  ls <category>     List challenges in a category
-  cd <slug>         Navigate to a category by slug
+  ls <n|slug>       List challenges in category
+  cd <n|slug>       Navigate to a category
+  cd ..             Go back to home
   start <n>         Start challenge number n
   clear             Clear the terminal
   progress          Show your progress
