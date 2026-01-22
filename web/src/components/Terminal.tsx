@@ -32,6 +32,21 @@ interface OutputLine {
   type: 'output' | 'command' | 'error' | 'success' | 'ascii';
 }
 
+// AskQuestion types inspired by Claude Agent SDK
+interface QuestionOption {
+  label: string;
+  description?: string;
+}
+
+interface PendingQuestion {
+  id: string;
+  question: string;
+  header: string;
+  options: QuestionOption[];
+  multiSelect: boolean;
+  onAnswer: (answer: string) => void;
+}
+
 // Generate unique ID for output lines
 const genId = () => Math.random().toString(36).substr(2, 9);
 
@@ -67,6 +82,70 @@ const findCategory = (arg: string): Category | undefined => {
 // rendering-hoist-jsx: Static cursor element
 const cursorElement = <span className="cursor" />;
 
+// Quiz questions about Claude Code tips
+const quizQuestions = [
+  {
+    question: "What's the recommended way to handle long-running commands in Claude Code?",
+    header: "Commands",
+    options: [
+      { label: "Use tmux", description: "Run in tmux session for persistence" },
+      { label: "Background with &", description: "Shell background execution" },
+      { label: "Just wait", description: "Wait for completion" },
+      { label: "Cancel and retry", description: "Stop and try again" },
+    ],
+    correct: 0,
+    tip: 9,
+  },
+  {
+    question: "What command compresses context without losing meaning?",
+    header: "Context",
+    options: [
+      { label: "/compact", description: "Compacts current context" },
+      { label: "/clear", description: "Clears conversation" },
+      { label: "/reset", description: "Resets session" },
+      { label: "/summarize", description: "Summarizes history" },
+    ],
+    correct: 0,
+    tip: 8,
+  },
+  {
+    question: "How do you get the absolute path of a file quickly?",
+    header: "Paths",
+    options: [
+      { label: "realpath", description: "Returns canonical path" },
+      { label: "pwd", description: "Print working directory" },
+      { label: "which", description: "Locate a command" },
+      { label: "whereis", description: "Find binary location" },
+    ],
+    correct: 0,
+    tip: 24,
+  },
+  {
+    question: "What's the best approach for parallel Claude Code sessions?",
+    header: "Workflow",
+    options: [
+      { label: "Git worktrees", description: "Separate working directories" },
+      { label: "Multiple terminals", description: "Just open more tabs" },
+      { label: "tmux splits", description: "Split terminal panes" },
+      { label: "Docker containers", description: "Isolated environments" },
+    ],
+    correct: 0,
+    tip: 16,
+  },
+  {
+    question: "When should you start a fresh Claude Code session?",
+    header: "Sessions",
+    options: [
+      { label: "When context is confused", description: "Claude seems lost" },
+      { label: "Every hour", description: "Regular intervals" },
+      { label: "After each file edit", description: "Per-file sessions" },
+      { label: "Never", description: "Keep one session always" },
+    ],
+    correct: 0,
+    tip: 5,
+  },
+];
+
 // rerender-memo: Memoized output line component
 const OutputLineItem = memo(function OutputLineItem({ line }: { line: OutputLine }) {
   return (
@@ -81,6 +160,45 @@ const OutputLineItem = memo(function OutputLineItem({ line }: { line: OutputLine
   );
 });
 
+// QuestionDisplay: Render AskUserQuestion-style multiple choice
+interface QuestionDisplayProps {
+  question: PendingQuestion;
+  onSelect: (index: number) => void;
+}
+
+const QuestionDisplay = memo(function QuestionDisplay({ question, onSelect }: QuestionDisplayProps) {
+  return (
+    <div className="my-2 border border-[#30363D] rounded p-3">
+      <div className="text-[#F778BA] font-bold mb-2">
+        [{question.header}] {question.question}
+      </div>
+      <div className="text-[#8B949E] text-sm mb-2">
+        {question.multiSelect ? 'Select multiple (comma-separated) or type:' : 'Select one or type:'}
+      </div>
+      <div className="space-y-1">
+        {question.options.map((opt, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-2 cursor-pointer hover:bg-[#21262D] px-2 py-1 rounded group"
+            onClick={() => onSelect(i)}
+          >
+            <span className="text-[#58A6FF] group-hover:text-[#79C0FF]">[{i + 1}]</span>
+            <div>
+              <span className="text-[#C9D1D9] group-hover:text-white">{opt.label}</span>
+              {opt.description && (
+                <span className="text-[#8B949E] ml-2">- {opt.description}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="text-[#8B949E] text-xs mt-2">
+        Type number to select, or type custom answer
+      </div>
+    </div>
+  );
+});
+
 export default function Terminal() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState<OutputLine[]>(welcomeOutput);
@@ -88,6 +206,8 @@ export default function Terminal() {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [completedChallenges] = useState<Set<string>>(() => new Set()); // rerender-lazy-state-init
+  const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
+  const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
 
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -96,6 +216,122 @@ export default function Terminal() {
   const addOutput = useCallback((content: React.ReactNode, type: OutputLine['type'] = 'output') => {
     setOutput(prev => [...prev, { id: genId(), content, type }]);
   }, []);
+
+  // AskUserQuestion-style: Present question and wait for answer
+  const askQuestion = useCallback((
+    question: string,
+    header: string,
+    options: QuestionOption[],
+    onAnswer: (answer: string) => void,
+    multiSelect = false
+  ) => {
+    const q: PendingQuestion = {
+      id: genId(),
+      question,
+      header,
+      options,
+      multiSelect,
+      onAnswer,
+    };
+    setPendingQuestion(q);
+    addOutput(
+      <QuestionDisplay
+        question={q}
+        onSelect={(index) => {
+          const answer = options[index].label;
+          setPendingQuestion(null);
+          addOutput(
+            <span>
+              <span className="text-[#58A6FF]">→ </span>
+              <span className="text-[#3FB950]">{answer}</span>
+            </span>,
+            'success'
+          );
+          onAnswer(answer);
+        }}
+      />
+    );
+  }, [addOutput]);
+
+  // Start a quiz session
+  const startQuiz = useCallback(() => {
+    setQuizScore({ correct: 0, total: 0 });
+    const shuffled = [...quizQuestions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 3); // 3 questions per quiz
+    let currentIndex = 0;
+
+    const askNextQuestion = () => {
+      if (currentIndex >= selected.length) {
+        // Quiz complete
+        setQuizScore(prev => {
+          const finalScore = prev;
+          addOutput('');
+          addOutput(
+            <div className="border border-[#30363D] p-3 rounded">
+              <div className="text-[#F778BA] font-bold mb-2">Quiz Complete!</div>
+              <div className="text-[#C9D1D9]">
+                Score: <span className="text-[#3FB950]">{finalScore.correct}</span>/{finalScore.total}
+              </div>
+              {finalScore.correct === finalScore.total && (
+                <div className="text-[#3FB950] mt-2">Perfect score! 🎉</div>
+              )}
+            </div>
+          );
+          addOutput('');
+          addOutput(<span className="text-[#8B949E]">Type &apos;quiz&apos; to try again</span>);
+          return finalScore;
+        });
+        return;
+      }
+
+      const q = selected[currentIndex];
+      addOutput('');
+      addOutput(
+        <span className="text-[#8B949E]">
+          Question {currentIndex + 1}/{selected.length}
+        </span>
+      );
+
+      askQuestion(
+        q.question,
+        q.header,
+        q.options,
+        (answer) => {
+          const selectedIndex = q.options.findIndex(o => o.label === answer);
+          const isCorrect = selectedIndex === q.correct;
+
+          setQuizScore(prev => ({
+            correct: prev.correct + (isCorrect ? 1 : 0),
+            total: prev.total + 1,
+          }));
+
+          if (isCorrect) {
+            addOutput(<span className="text-[#3FB950]">✓ Correct!</span>, 'success');
+          } else {
+            addOutput(
+              <span className="text-[#F85149]">
+                ✗ Incorrect. The answer was: {q.options[q.correct].label}
+              </span>,
+              'error'
+            );
+          }
+          addOutput(
+            <span className="text-[#8B949E]">
+              Related tip: #{q.tip}
+            </span>
+          );
+
+          currentIndex++;
+          setTimeout(askNextQuestion, 500);
+        }
+      );
+    };
+
+    addOutput('');
+    addOutput(<span className="text-[#F778BA] font-bold">CLAUDE CODE QUIZ</span>);
+    addOutput(<span className="text-[#8B949E]">Test your knowledge! Click an option or type its number.</span>);
+    askNextQuestion();
+  }, [addOutput, askQuestion]);
 
   // Start a challenge
   const startChallenge = useCallback((ch: Challenge, catSlug: string | undefined) => {
@@ -354,6 +590,39 @@ export default function Terminal() {
         showProgress();
         break;
 
+      case 'quiz':
+        startQuiz();
+        break;
+
+      case 'ask': {
+        // Demo of AskUserQuestion-style interaction
+        const demoQuestion = args.join(' ') || 'Which feature interests you most?';
+        askQuestion(
+          demoQuestion,
+          'Question',
+          [
+            { label: 'MCP Integrations', description: 'Connect external tools' },
+            { label: 'Context Management', description: 'Optimize token usage' },
+            { label: 'Workflow Automation', description: 'Boost productivity' },
+            { label: 'Testing Patterns', description: 'Ensure quality' },
+          ],
+          (answer) => {
+            addOutput(<span className="text-[#8B949E]">You selected: {answer}</span>);
+            const cat = categories.find(c =>
+              c.name.toLowerCase().includes(answer.toLowerCase().split(' ')[0])
+            );
+            if (cat) {
+              addOutput(
+                <span className="text-[#8B949E]">
+                  Try: <span className="text-[#58A6FF]">cd {cat.slug}</span>
+                </span>
+              );
+            }
+          }
+        );
+        break;
+      }
+
       case '':
         break;
 
@@ -371,7 +640,56 @@ export default function Terminal() {
       setCommandHistory(prev => [...prev, trimmed]);
       setHistoryIndex(-1);
     }
-  }, [addOutput, currentCategory, listChallenges, listCategories, showCategory, startChallenge, showProgress]);
+  }, [addOutput, currentCategory, listChallenges, listCategories, showCategory, startChallenge, showProgress, startQuiz, askQuestion]);
+
+  // Handle pending question answers
+  const handleQuestionAnswer = useCallback((answer: string) => {
+    if (!pendingQuestion) return false;
+
+    // Check if it's a number selection
+    const num = parseInt(answer);
+    if (!isNaN(num) && num >= 1 && num <= pendingQuestion.options.length) {
+      const selectedOption = pendingQuestion.options[num - 1];
+      addOutput(
+        <span>
+          <span className="text-[#58A6FF]">→ </span>
+          <span className="text-[#3FB950]">{selectedOption.label}</span>
+        </span>,
+        'success'
+      );
+      pendingQuestion.onAnswer(selectedOption.label);
+      setPendingQuestion(null);
+      return true;
+    }
+
+    // Check if it matches an option label
+    const matchedOption = pendingQuestion.options.find(
+      o => o.label.toLowerCase() === answer.toLowerCase()
+    );
+    if (matchedOption) {
+      addOutput(
+        <span>
+          <span className="text-[#58A6FF]">→ </span>
+          <span className="text-[#3FB950]">{matchedOption.label}</span>
+        </span>,
+        'success'
+      );
+      pendingQuestion.onAnswer(matchedOption.label);
+      setPendingQuestion(null);
+      return true;
+    }
+
+    // Custom text answer
+    addOutput(
+      <span>
+        <span className="text-[#58A6FF]">→ </span>
+        <span className="text-[#C9D1D9]">{answer}</span>
+      </span>
+    );
+    pendingQuestion.onAnswer(answer);
+    setPendingQuestion(null);
+    return true;
+  }, [addOutput, pendingQuestion]);
 
   // Focus input on mount
   useEffect(() => {
@@ -388,6 +706,12 @@ export default function Terminal() {
   // Handle input - rerender-transitions for non-urgent updates
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      // Check if there's a pending question first
+      if (pendingQuestion && input.trim()) {
+        handleQuestionAnswer(input.trim());
+        setInput('');
+        return;
+      }
       processCommand(input);
       setInput('');
     } else if (e.key === 'ArrowUp') {
@@ -412,19 +736,22 @@ export default function Terminal() {
       e.preventDefault();
       // rerender-transitions: Non-urgent UI update
       startTransition(() => {
-        const commands = ['help', 'ls', 'cd', 'start', 'clear', 'progress', 'about'];
+        const commands = ['help', 'ls', 'cd', 'start', 'clear', 'progress', 'about', 'quiz', 'ask'];
         const catSlugs = categories.map(c => c.slug);
         const all = [...commands, ...catSlugs];
         const match = all.find(c => c.startsWith(input.toLowerCase()));
         if (match) setInput(match);
       });
     } else if (e.key === 'Escape') {
-      if (currentCategory) {
+      if (pendingQuestion) {
+        setPendingQuestion(null);
+        addOutput(<span className="text-[#8B949E]">Question cancelled</span>);
+      } else if (currentCategory) {
         setCurrentCategory(null);
         addOutput(<span className="text-[#3FB950]">Returned to home</span>, 'success');
       }
     }
-  }, [addOutput, commandHistory, currentCategory, historyIndex, input, processCommand]);
+  }, [addOutput, commandHistory, currentCategory, historyIndex, input, processCommand, pendingQuestion, handleQuestionAnswer]);
 
   // Get prompt - simple enough to not need memoization
   const prompt = currentCategory ? `~/challenges/${currentCategory.slug}` : '~';
@@ -457,7 +784,7 @@ export default function Terminal() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           className="command-input flex-1"
-          placeholder="Type a command..."
+          placeholder={pendingQuestion ? "Type number or answer..." : "Type a command..."}
           autoFocus
           spellCheck={false}
           autoComplete="off"
@@ -467,9 +794,14 @@ export default function Terminal() {
 
       {/* Status bar */}
       <div className="bg-[#161B22] border-t border-[#30363D] px-4 py-1 flex items-center justify-between text-xs text-[#8B949E]">
-        <span>Claude Code Challenges</span>
-        <span>{completedChallenges.size}/{getTotalChallenges()} completed</span>
-        <span>[ESC: back] [TAB: complete]</span>
+        <span>{pendingQuestion ? `[${pendingQuestion.header}] Awaiting answer...` : 'Claude Code Challenges'}</span>
+        <span>
+          {quizScore.total > 0 && (
+            <span className="mr-4 text-[#3FB950]">Quiz: {quizScore.correct}/{quizScore.total}</span>
+          )}
+          {completedChallenges.size}/{getTotalChallenges()} completed
+        </span>
+        <span>{pendingQuestion ? '[ESC: cancel] [1-4: select]' : '[ESC: back] [TAB: complete]'}</span>
       </div>
     </div>
   );

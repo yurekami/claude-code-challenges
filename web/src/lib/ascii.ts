@@ -81,12 +81,15 @@ Available commands:
   start <n>         Start challenge number n
   clear             Clear the terminal
   progress          Show your progress
+  quiz              Test your Claude Code knowledge
+  ask [question]    Interactive question (demo)
   about             About Claude Code Challenges
 
 Navigation tips:
   - Click on any [bracketed] item to select it
+  - Type number to select from options
   - Use Tab to autocomplete commands
-  - Press Escape to go back
+  - Press Escape to go back or cancel
 `;
 
 export const aboutText = `
